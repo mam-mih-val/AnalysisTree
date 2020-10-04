@@ -23,7 +23,6 @@ bool VarManagerEntry::ApplyCutOnBranches(BranchReader* br1, int ch1, BranchReade
   auto cut_func = [this, ch1, ch2](auto&& arg1, auto&& arg2) { return cuts_->Apply(arg1->GetChannel(ch1), arg1->GetId(), arg2->GetChannel(ch2), arg2->GetId()); };
   return std::visit(cut_func, br1->GetData(), br2->GetData());
 #endif
-  throw std::runtime_error("This should never happen");
 }
 
 double VarManagerEntry::FillVariabe(const Variable& var, BranchReader* br1, int ch1, BranchReader* br2, int ch2) {
@@ -35,6 +34,11 @@ double VarManagerEntry::FillVariabe(const Variable& var, BranchReader* br1, int 
 #endif
 }
 
+/**
+ * @brief takes BranchReader and evaluates all Variables associated with branch.
+ * If a branch is a Channel or Tracking detector, evaluation is performed channel-by-channel.
+ * If channel or track fails to pass cuts it won't be written
+ */
 void VarManagerEntry::FillFromOneBranch() {
   BranchReader* br = branches_.at(0);
   const auto n_channels = br->GetNumberOfChannels();
@@ -43,12 +47,10 @@ void VarManagerEntry::FillFromOneBranch() {
   for (size_t i_channel = 0; i_channel < n_channels; ++i_channel) {
     if (!br->ApplyCut(i_channel)) continue;
     if (!ApplyCutOnBranch(br, i_channel)) continue;
-    //    if (cuts_ && !std::visit([this, i_channel](auto &&arg) { return cuts_->Apply(arg->GetChannel(i_channel)); }, br->GetData())) continue;
     std::vector<double> temp_vars(vars_.size());
     short i_var{0};
     for (const auto& var : vars_) {
       temp_vars[i_var] = br->GetValue(var, i_channel);
-      //std::visit([var, i_channel](auto &&arg) { return var.GetValue(arg->GetChannel(i_channel)); }, br->GetData());
       i_var++;
     }//variables
     values_.emplace_back(temp_vars);
@@ -62,6 +64,10 @@ void VarManagerEntry::FillMatchingForEventHeader(BranchReader* br1, BranchReader
   }
 }
 
+/**
+ * @brief FillFromTwoBranches populates Variables if matching between two branches is defined
+ * It iterates over registered matches and fills variables
+ */
 void VarManagerEntry::FillFromTwoBranches() {
   BranchReader* br1 = branches_.at(0);
   BranchReader* br2 = branches_.at(1);
@@ -77,16 +83,9 @@ void VarManagerEntry::FillFromTwoBranches() {
     const int ch1 = match.first;
     const int ch2 = match.second;
     if (!ApplyCutOnBranches(br1, ch1, br2, ch2)) continue;
-
-    //    auto cut_func = [this, ch1, ch2](auto &&arg1, auto &&arg2) {
-    //                                    return cuts_->Apply(arg1->GetChannel(ch1), arg1->GetId(), arg2->GetChannel(ch2), arg2->GetId()); };
-    //    if (cuts_ && !std::visit(cut_func, br1->GetData(), br2->GetData())) continue;
-
     std::vector<double> temp_vars(vars_.size());
     short i_var{};
     for (const auto& var : vars_) {
-      //      auto func = [var, ch1, ch2](auto &&arg1, auto &&arg2) {return var.GetValue(arg1->GetChannel(ch1), arg1->GetId(), arg2->GetChannel(ch2), arg2->GetId()); };
-      //      temp_vars[i_var] = std::visit(func, br1->GetData(), br2->GetData());
       temp_vars[i_var] = FillVariabe(var, br1, ch1, br2, ch2);
       i_var++;
     }//variables

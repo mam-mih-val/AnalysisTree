@@ -14,10 +14,14 @@ namespace AnalysisTree {
 
 class Configuration;
 
+
+/**
+ * @brief Cuts holds list of SimpleCuts and provides Apply function which subsequently applies cuts
+ */
 class Cuts {
 
  public:
-  Cuts() = delete;
+  Cuts() = default;
   Cuts(const Cuts& cut) = default;
   Cuts(Cuts&& cut) = default;
   Cuts& operator=(Cuts&&) = default;

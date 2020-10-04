@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <array>
 
 #include <TObject.h>
 
@@ -37,13 +38,13 @@ class Configuration : public TObject {
   [[nodiscard]] const std::vector<BranchConfig>& GetBranchConfigs() const { return branches_; }
   [[nodiscard]] uint GetNumberOfBranches() const { return branches_.size(); }
 
-  [[nodiscard]] uint GetLastId() const { return branches_.back().GetId(); }
+  [[nodiscard]] uint GetLastId() const { return branches_.empty() ? 0 : branches_.back().GetId(); }
 
   [[nodiscard]] const std::string& GetMatchName(const std::string& br1, const std::string& br2) const;
   [[nodiscard]] std::pair<std::string, bool> GetMatchInfo(const std::string& br1, const std::string& br2) const;
   [[nodiscard]] const std::map<std::array<std::string, 2>, std::string>& GetMatches() const { return matches_; }
 
-  void Print() const;
+  void Print(Option_t* ="") const;
 
  protected:
   std::string name_;
